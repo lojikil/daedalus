@@ -79,6 +79,10 @@ class TokenStore:
         sqlcon.commit()
         cur.close()
 
+# Move the below into a class, so that multiple corpora can
+# be instantiated, each with a token Store (might want to just jam
+# it all into TokenStore, with a pretty method set). 
+
 filter_nonan = re.compile('[^a-zA-Z0-9 \']')
 
 def tokenize_file(n):
@@ -96,6 +100,7 @@ for x in range(0,len(corpus)):
     tokens = tokenize_file(f)
     for tok in tokens:
         ts.add(tok,x)
+
 print "Building index..."
 ts.build_index()
 #ts.dump_database("./index_test.db")
