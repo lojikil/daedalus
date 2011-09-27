@@ -48,14 +48,12 @@ class TokenStore:
     def build_index(self):
         global corpus
         doc_count = float(len(corpus))
-        for did in range(0,len(corpus)):
-            filtre_list = filter(lambda x: x['doc_id'] == did, self.token_list)
-            filtre_count = float(len(filtre_list))
+        for doc in self.documents:
+            filtre_list = self.documents[doc]
+            filtre_count = float(len(self.documents[doc].keys()))
             for tok in filtre_list:
-                tf = float(tok['term_frequency']) / filtre_count
-                ifreq = log(doc_count / float(tok['term_frequency']))
-                tf_idf = tf * ifreq
-                tok['tf_idf'] = tf_idf
+                ifreq = log(doc_count / float(filtre_list[tok]['term_frequency']))
+                filtre_list[tok]['tf_idf'] = float(filtre_list[tok]['term_frequency']) * ifreq
 
     def doc_search(self,terms):
         """Dead simple document search"""
@@ -86,7 +84,6 @@ filter_nonan = re.compile('[^a-zA-Z0-9 \']')
 def tokenize_file(n):
     """ Break apart a file, remove surperflous markings and return a token list. Should filter stopwords, but not currently"""
     global stopwords
-    # should probably compile this
     return [t for t in filter_nonan.sub(' ',open(n).read()).lower().split() if t not in stopwords]
 
 for root,dirs,files in walk('programming'):
@@ -100,7 +97,7 @@ for x in range(0,len(corpus)):
     for tok in tokens:
         ts.add(tok,x)
 print "Building index..."
-#ts.build_index()
+ts.build_index()
 #ts.dump_database("./index_test.db")
 print "Completed..."
 print "Number of documents in corpus:",len(corpus)
