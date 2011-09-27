@@ -1,0 +1,7 @@
+<ul>
+{% for entry in entries %}
+    <li><a href="#" onclick="$.ajax({url: '/static/{{entry.document}}', success: function(data){$('#result').html('<pre>'+data+'</pre>')} })">{{entry.document}}</a> ({{entry.score}})</li>
+{% else %}
+    <li>Your search did not match any documents</li>
+{% endfor %}
+</ul>

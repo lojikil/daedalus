@@ -1,0 +1,18 @@
+<html>
+ <head>
+  <title>Daedalus search: quick & dirty corpus search</title>
+  <link href="static/main.css" type="text/css" rel="stylesheet" />
+  <script src="static/jquery-1.4.4.min.js" type="text/javascript">
+  </script>
+ </head>
+ <body>
+  <div id="main">
+   <div id="search">
+    <input type="text" id="query"/>
+    &nbsp;&nbsp;
+    <button onclick="$.post('/search', {'query': $('#query').val()},function(data){$('#result').html(data)})">Search</button>
+   </div>
+   <div id="result" />
+  </div>
+ </body>
+</html> 
