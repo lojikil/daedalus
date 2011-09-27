@@ -65,17 +65,19 @@ class TokenStore:
 
     def dump_database(self,file):
         """ Addendum 03DEC2010: added database dump. Given the time, I would also clean up the globals I used :X"""
-        global corpus
         sqlcon = sqlite3.connect(file)
         cur = sqlcon.cursor()
-        for doc in corpus: # not the most efficient method, but going with the overall theme
+        doc_id = 1 # fudge the index of document keys
+        for doc in self.documents: # not the most efficient method, but going with the overall theme
             cur.execute("INSERT INTO docs (document) VALUES ('%s')" % doc)
-        for token in self.token_list:
-            cur.execute("INSERT INTO tokens VALUES (%d,\"%s\",%d,%d,%f)" % (token['tok_id'],
-                                                                            token['tok'],
-                                                                            token['tok_len'],
-                                                                            token['doc_id'],
-                                                                            token['tf_idf']))
+            for token in self.documents[doc]:
+                cur.execute("INSERT INTO tokens (tok,tok_count,doc_id,tf_idf) VALUES (\"%s\",%d,%d,%f)" %
+                               (token,
+                                self.documents[doc][token]['term_frequency'],
+                                doc_id,
+                                self.documents[doc][token]['tf_idf']))
+            doc_id += 1
+
         sqlcon.commit()
         cur.close()
 
@@ -94,16 +96,15 @@ for root,dirs,files in walk('programming'):
     corpus[len(corpus):] = [join(root,file) for file in files]
 
 ts = TokenStore()
-for x in range(0,len(corpus)):
-    f = corpus[x]
+for f in corpus:
     print "Processing",f,"..."
     tokens = tokenize_file(f)
     for tok in tokens:
-        ts.add(tok,x)
+        ts.add(tok,f)
 
 print "Building index..."
 ts.build_index()
-#ts.dump_database("./index_test.db")
+ts.dump_database("./index_test.db")
 print "Completed..."
 print "Number of documents in corpus:",len(corpus)
 print "Number of tokens in TokStor:",ts.token_count
