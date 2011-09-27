@@ -34,7 +34,8 @@ class TokenStore:
 		self.token_list = []
 		self.token_count = 0
 	def token_exists_p(self,token,did):
-		""" semi-pred: returns document index on true (that token is in token list), returns false otherwise """
+		""" semi-pred: returns document index on true 
+        (that token is in token list), returns false otherwise """
 		for t in range(0,len(self.token_list)):
 			if self.token_list[t]['tok'] == token and self.token_list[t]['doc_id'] == did:
 				return t
@@ -45,7 +46,12 @@ class TokenStore:
 		if idx:
 			self.token_list[idx]['tok_len'] = self.token_list[idx]['tok_len'] + 1
 		else:
-			self.token_list[len(self.token_list):] = [{'tok': token, 'tok_len': 1, 'tok_id': global_tok_id, 'doc_id': did, 'tf_idf': 0.0}]
+			self.token_list[len(self.token_list):] = [{
+                                                       'tok': token,
+                                                       'tok_len': 1,
+                                                       'tok_id': global_tok_id,
+                                                       'doc_id': did,
+                                                       'tf_idf': 0.0}]
 			global_tok_id = global_tok_id + 1
 	def build_index(self):
 		global corpus
@@ -63,7 +69,8 @@ class TokenStore:
 		"""Dead simple document search"""
 		return_list = []
 		for term in terms:
-			return_list[len(return_list):] = [map(lambda x: (x['doc_id'],x['tf_idf']), filter(lambda x: x['tok'] == term,self.token_list))]
+			return_list[len(return_list):] = [map(lambda x: (x['doc_id'],x['tf_idf']),
+                                                 filter(lambda x: x['tok'] == term,self.token_list))]
 		return return_list
 	def dump_database(self,file):
 		""" Addendum 03DEC2010: added database dump. Given the time, I would also clean up the globals I used :X"""
@@ -73,14 +80,17 @@ class TokenStore:
 		for doc in corpus: # not the most efficient method, but going with the overall theme
 			cur.execute("INSERT INTO docs (document) VALUES ('%s')" % doc)
 		for token in self.token_list:
-			#tmp = "INSERT INTO tokens VALUES (%d,'%s',%d,%d,%f)" % (token['tok_id'],token['tok'],token['tok_len'],token['doc_id'],token['tf_idf'])
-			#print "tmp == ",tmp
-			cur.execute("INSERT INTO tokens VALUES (%d,\"%s\",%d,%d,%f)" % (token['tok_id'],token['tok'],token['tok_len'],token['doc_id'],token['tf_idf']))
+			cur.execute("INSERT INTO tokens VALUES (%d,\"%s\",%d,%d,%f)" % (token['tok_id'],
+                                                                            token['tok'],
+                                                                            token['tok_len'],
+                                                                            token['doc_id'],
+                                                                            token['tf_idf']))
 		sqlcon.commit()
 		cur.close()
 def tokenize_file(n):
 	""" Break apart a file, remove surperflous markings and return a token list. Should filter stopwords, but not currently"""
 	global stopwords
+    # should probably compile this
 	return [t for t in re.sub('[^a-zA-Z0-9 \']',' ',open(n).read()).lower().split()]
 
 for root,dirs,files in walk('programming'):
