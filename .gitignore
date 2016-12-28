@@ -5,3 +5,4 @@
 programming/
 static/programming
 index_test.db
+cache/*

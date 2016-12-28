@@ -62,13 +62,13 @@ class TokenStore(object):
     def build_index(self):
         doc_count = float(len(self.corpus))
         for doc in self.documents:
-            filtre_list = self.documents[doc]
-            # filtre_count = float(len(self.documents[doc].keys()))
-            for tok in filtre_list:
+            filter_list = self.documents[doc]
+            # filter_count = float(len(self.documents[doc].keys()))
+            for tok in filter_list:
                 ifreq = log(doc_count /
-                            float(filtre_list[tok]['term_frequency']))
-                tf = float(filtre_list[tok]['term_frequency'])
-                filtre_list[tok]['tf_idf'] = tf * ifreq
+                            float(filter_list[tok]['term_frequency']))
+                tf = float(filter_list[tok]['term_frequency'])
+                filter_list[tok]['tf_idf'] = tf * ifreq
 
     def _reducer(self, term):
         return lambda x: x['tok'] == term
