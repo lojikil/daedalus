@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # @(#) create_db.py creates the sqlite3 database for Daedalus to use.
-# @(#) 2010 ok sedwards@lojikil 
+# @(#) 2010 ok sedwards@lojikil
 
 import sqlite3
 import sys
@@ -13,5 +13,3 @@ try:
     cur.close()
 except:
     print sys.exc_info()
-    pass
-

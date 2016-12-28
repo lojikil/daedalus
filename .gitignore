@@ -1,0 +1,7 @@
+*.swp
+*.pyc
+*.tgz
+*.gz
+programming/
+static/programming
+index_test.db

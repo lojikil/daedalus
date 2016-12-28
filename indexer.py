@@ -34,106 +34,114 @@ import re
 from math import log
 from os import walk
 from os.path import join
+import sqlite3  # Addenudum 03DEC2010: added this for Arc90 demo
 
-import sqlite3 # Addenudum 03DEC2010: added this for Arc90 demo
-
-corpus = []
-stopwords = open('stopwords.dat').read().split()
 
 class TokenStore(object):
-    def __init__(self):
+
+    def __init__(self, corpus, stopwords):
         self.documents = {}
         self.token_count = 0
+        self.corpus = corpus
+        self.stopwords = stopwords
+        self.filter_nonan = re.compile('[^a-zA-Z0-9 \']')
 
-    def add(self,token,did):
+    def add(self, token, did):
 
         if did not in self.documents:
             self.documents[did] = {}
+
         self.token_count += 1
+
         if token in self.documents[did]:
             self.documents[did][token]['term_frequency'] += 1
         else:
             self.documents[did][token] = {'term_frequency': 1,
-                                        'tf_idf': 0.0}
+                                          'tf_idf': 0.0}
 
     def build_index(self):
-        global corpus
-        doc_count = float(len(corpus))
+        doc_count = float(len(self.corpus))
         for doc in self.documents:
             filtre_list = self.documents[doc]
-            filtre_count = float(len(self.documents[doc].keys()))
+            # filtre_count = float(len(self.documents[doc].keys()))
             for tok in filtre_list:
                 ifreq = log(doc_count /
                             float(filtre_list[tok]['term_frequency']))
-                filtre_list[tok]['tf_idf'] = float(filtre_list[tok]['term_frequency']) * ifreq
+                tf = float(filtre_list[tok]['term_frequency'])
+                filtre_list[tok]['tf_idf'] = tf * ifreq
 
-    def _reducer(self, term)
+    def _reducer(self, term):
         return lambda x: x['tok'] == term
 
-    def doc_search(self,terms):
+    def doc_search(self, terms):
         """Dead simple document search"""
         return_list = []
         term = None
         mapper = lambda x: (x['doc_id'], x['tf_idf'])
-        reducer = lambda x: x['tok'] == term
         for term in terms:
             return_list[len(return_list):] = [map(mapper,
                                               filter(self._reducer(term),
                                                      self.token_list))]
         return return_list
 
-    def dump_database(self,file):
-        """ Addendum 03DEC2010: added database dump. Given the time,
-            I would also clean up the globals I used :X"""
-        sqlcon = sqlite3.connect(file)
+    def dump_database(self, infile):
+        """ Addendum 03DEC2010: added database dump."""
+
+        # really need to parameterize these...
+        docsql = "INSERT INTO docs (document) VALUES ('%s')"
+        frqsql = "INSERT INTO tokens (tok,tok_count,doc_id,tf_idf) VALUES (\"%s\", %d, %d, %f)"
+        sqlcon = sqlite3.connect(infile)
         cur = sqlcon.cursor()
-        doc_id = 1 # fudge the index of document keys
+        doc_id = 1  # fudge the index of document keys
         for doc in self.documents:
             # parameterize this...
-            cur.execute("INSERT INTO docs (document) VALUES ('%s')" % doc)
+            cur.execute(docsql % doc)
             for token in self.documents[doc]:
-                cur.execute("INSERT INTO tokens (tok,tok_count,doc_id,tf_idf) VALUES (\"%s\",%d,%d,%f)" %
-                               (token,
-                                self.documents[doc][token]['term_frequency'],
-                                doc_id,
-                                self.documents[doc][token]['tf_idf']))
+                cur.execute(frqsql %
+                            (token,
+                             self.documents[doc][token]['term_frequency'],
+                             doc_id,
+                             self.documents[doc][token]['tf_idf']))
             doc_id += 1
 
         sqlcon.commit()
         cur.close()
 
-# Move the below into a class, so that multiple corpora can
-# be instantiated, each with a token Store (might want to just jam
-# it all into TokenStore, with a pretty method set). 
+    def tokenize_file(self, infile):
+        """ Break apart a file, remove surperflous markings
+            and return a token list."""
+        with open(infile, 'r') as fh:
+            return [t for t in
+                    self.filter_nonan.sub(' ',
+                                          fh.read()).lower().split()
+                    if t not in stopwords]
 
-filter_nonan = re.compile('[^a-zA-Z0-9 \']')
+    def tokenize_and_add(self, infile):
+        tokens = self.tokenize_file(infile)
+        for token in tokens:
+            self.add(token, infile)
 
-def tokenize_file(n):
-    """ Break apart a file, remove surperflous markings and return a token list."""
-    global stopwords
-    with open(n, 'r') as fh:
-        return [t for t in
-                filter_nonan.sub(' ',
-                             fh.read()).lower().split()
-                if t not in stopwords]
+    def ingest_corpus(self):
+        for doc in self.corpus:
+            self.tokenize_and_add(doc)
+
 
 if __name__ == "__main__":
 
-    for root,dirs,files in walk('programming'):
-        corpus[len(corpus):] = [join(root,file) for file in files]
+    corpus = []
+    stopwords = open('stopwords.dat').read().split()
 
-    ts = TokenStore()
-    for f in corpus:
-        print "Processing",f,"..."
-        tokens = tokenize_file(f)
-        for tok in tokens:
-            ts.add(tok,f)
+    for root, dirs, files in walk('programming'):
+        corpus[len(corpus):] = [join(root, file) for file in files]
+
+    ts = TokenStore(corpus, stopwords)
+    ts.ingest_corpus()
 
     print "Building index..."
     ts.build_index()
     ts.dump_database("./index_test.db")
     print "Completed..."
-    print "Number of documents in corpus:",len(corpus)
-    print "Number of tokens in TokStor:",ts.token_count
-    #print "Search for [\"limited\",\"field\"]",
-    #print ts.doc_search(["limited","field"])
+    print "Number of documents in corpus:", len(corpus)
+    print "Number of tokens in TokStor:", ts.token_count
+    # print "Search for [\"limited\",\"field\"]",
+    # print ts.doc_search(["limited","field"])
