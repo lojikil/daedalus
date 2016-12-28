@@ -37,7 +37,7 @@ def daedalus_search():
     entries = []
     if request.method == "POST":
         if request.form['query']:
-            qs = request.form['query'].split(' ')
+            qs = request.form['query'].lower().split(' ')
             for q in qs:
                 cur = g.db.execute(SQLQ, [q])
                 entries.extend([dict(document=row[0], score=row[1])
