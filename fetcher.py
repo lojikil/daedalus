@@ -2,11 +2,38 @@
 # @(#) a simple python page fetcher, that caches a local copy 
 
 import requests
-from readability import Document
-import sys
-from bs4 import BeautifulSoup
 import re
+import sys
+import time
+from readability import Document
+from bs4 import BeautifulSoup
 from TokenStore import TokenStore
+
+def process(arg, slugify, stopwords, ts, headers):
+    try:
+        print "requesting {0}".format(arg)
+        response = requests.get(arg, headers)
+        doc = Document(response.text)
+        title = doc.title().lower()
+        slug = slugify.sub("-", title)
+        soup = BeautifulSoup(doc.get_clean_html(), "lxml")
+        text = soup.getText()
+        rtime = time.ctime().replace(' ', '-')
+        site = "original site: {0}".format(arg)
+        tag = soup.new_tag("a", href=arg, contents=site)
+        soup.body.insert(0, tag)
+        html = soup.prettify("utf-8")
+        if len(slug) > 100:
+            slug = slug[0:100]
+        filename = './cache/{0}-{1}.html'.format(rtime, slug)
+        ts.tokenize_and_add(filename[2:], text=text, new=True)
+        with open(filename, "w") as fh:
+            fh.write(html)
+    except Exception as e:
+        print e
+        print sys.exc_info()
+        print "skipping..."
+        pass
 
 if len(sys.argv) < 2:
     print "Usage: fetcher.py <url0> <url1> ... <urlN>"
@@ -16,23 +43,17 @@ slugify = re.compile('[^a-zA-Z0-9]+')
 stopwords = open('stopwords.dat').read().split()
 # need a rehydrate step from the sqlite db...
 ts = TokenStore([], stopwords)
+headers = requests.utils.default_headers()
+headers.update({
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36'
+})
 
-for arg in sys.argv[1:]:
-    response = requests.get(arg)
-    doc = Document(response.text)
-    title = doc.title().lower()
-    slug = slugify.sub("-", title)
-    print slug
-    soup = BeautifulSoup(doc.get_clean_html(), "lxml")
-    text = soup.getText()
-    site = "original site: {0}".format(arg)
-    tag = soup.new_tag("a", href=arg, contents=site)
-    soup.body.insert(0, tag)
-    html = soup.prettify("utf-8")
-    filename = './cache/{0}.html'.format(slug)
-    ts.tokenize_and_add(filename[2:], text=text, new=True)
-    with open(filename, "w") as fh:
-        fh.write(html)
+if sys.argv[1] == '-':
+    for line in sys.stdin:
+        process(line.strip(), slugify, stopwords, ts, headers)
+else:
+    for arg in sys.argv[1:]:
+        process(arg, slugify, stopwords, ts, headers)
 
 ts.build_index()
 ts.dump_database("./index_test.db")

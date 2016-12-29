@@ -6,3 +6,6 @@ programming/
 static/programming
 index_test.db
 cache/*
+static/cache
+dump
+dump[0-9]

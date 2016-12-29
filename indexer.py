@@ -10,7 +10,7 @@ if __name__ == "__main__":
     corpus = []
     stopwords = open('stopwords.dat').read().split()
 
-    for root, dirs, files in walk('programming'):
+    for root, dirs, files in walk('cache'):
         corpus[len(corpus):] = [join(root, file) for file in files]
 
     ts = TokenStore(corpus, stopwords)
