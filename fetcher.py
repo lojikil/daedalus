@@ -20,7 +20,8 @@ def process(arg, slugify, stopwords, ts, headers):
         text = soup.getText()
         rtime = time.ctime().replace(' ', '-')
         site = "original site: {0}".format(arg)
-        tag = soup.new_tag("a", href=arg, contents=site)
+        tag = soup.new_tag("a", href=arg)
+        tag.append(site)
         soup.body.insert(0, tag)
         html = soup.prettify("utf-8")
         if len(slug) > 100:
