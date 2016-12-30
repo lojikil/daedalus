@@ -110,6 +110,29 @@ class TokenStore(object):
         sqlcon.commit()
         cur.close()
 
+    def load_database(self, dbfile):
+        docsql = "SELECT document FROM docs ORDER BY doc_id"
+        frqsql = "SELECT tok, tok_count, doc_id FROM tokens"
+        docs = []
+
+        sqlcon = sqlite3.connect(dbflie)
+        cur = sqlcon.execute(docsql)
+
+        for row in cur.fetchall():
+            self.documents[row[0]] = {}
+            # we keep this so that we can just look up
+            # which document here...
+            docs.append(row[0])
+
+        cur = sqlcon.execute(frqsql)
+
+        for row in cur.fetchall():
+            tok = row[0]
+            cnt = row[1]
+            docid = row[2]
+            dockey = docs[docid]
+            self.documents[dockey][tok] = dict(term_frequency=cnt, tf_idf=0.0)
+
     def tokenize_text(self, text):
         return [t for t in
                 self.filter_nonan.sub(' ', text).lower().split()
