@@ -115,7 +115,7 @@ class TokenStore(object):
         frqsql = "SELECT tok, tok_count, doc_id FROM tokens"
         docs = []
 
-        sqlcon = sqlite3.connect(dbflie)
+        sqlcon = sqlite3.connect(dbfile)
         cur = sqlcon.execute(docsql)
 
         for row in cur.fetchall():
@@ -129,7 +129,7 @@ class TokenStore(object):
         for row in cur.fetchall():
             tok = row[0]
             cnt = row[1]
-            docid = row[2]
+            docid = row[2] - 1
             dockey = docs[docid]
             self.documents[dockey][tok] = dict(term_frequency=cnt, tf_idf=0.0)
 
