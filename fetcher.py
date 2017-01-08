@@ -49,12 +49,14 @@ stopwords = open('stopwords.dat').read().split()
 ts = TokenStore([], stopwords)
 
 args = sys.argv[1:]
+fresh = False
 
 if args[0] != '-F':
     ts.load_database('./index_test.db')
 else:
     # here, we strip off the '-F' and
     # do not load the database
+    fresh = True
     args = args[1:]
 
 headers = requests.utils.default_headers()
@@ -89,4 +91,4 @@ for arg in args:
         process(arg, slugify, stopwords, ts, headers)
 
 ts.build_index()
-ts.dump_database("./index_test.db", reindex=True)
+ts.dump_database("./index_test.db", reindex=True, fresh=fresh)
