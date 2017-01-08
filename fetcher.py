@@ -37,24 +37,56 @@ def process(arg, slugify, stopwords, ts, headers):
         pass
 
 if len(sys.argv) < 2:
-    print "Usage: fetcher.py <url0> <url1> ... <urlN>"
+    print "Usage: fetcher.py [-F] <pat0> <pat1> ... <patN>"
+    print "pat :== (<url> | <filepat>)"
+    print "filepat :== -f (filename | '-')"
+    print "-F: force a database refresh (ignore previous contents)"
     sys.exit(0)
 
 slugify = re.compile('[^a-zA-Z0-9]+')
 stopwords = open('stopwords.dat').read().split()
-# need a rehydrate step from the sqlite db...
+
 ts = TokenStore([], stopwords)
+
+args = sys.argv[1:]
+
+if args[0] != '-F':
+    ts.load_database('./index_test.db')
+else:
+    # here, we strip off the '-F' and
+    # do not load the database
+    args = args[1:]
+
 headers = requests.utils.default_headers()
 headers.update({
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36'
 })
 
-if sys.argv[1] == '-':
-    for line in sys.stdin:
-        process(line.strip(), slugify, stopwords, ts, headers)
-else:
-    for arg in sys.argv[1:]:
+# hackety hack: this is the flag
+# we use to signal that the argument
+# following this one should be interpreted
+# as a file to be read for links
+flag = False
+
+for arg in args:
+    if arg == '-f':
+        flag = True
+    elif flag:
+        if arg == '-':
+            for line in sys.stdin:
+                process(line.strip(), slugify, stopwords, ts, headers)
+        else:
+            # these two cases _probably_ could be combined...
+            with file(arg) as fh:
+                for line in fh:
+                    process(line.strip(),
+                            slugify,
+                            stopwords,
+                            ts,
+                            headers)
+        flag = False
+    else:
         process(arg, slugify, stopwords, ts, headers)
 
 ts.build_index()
-ts.dump_database("./index_test.db")
+ts.dump_database("./index_test.db", reindex=True)
