@@ -58,8 +58,9 @@ class TokenStore(object):
                                           'tf_idf': 0.0}
 
     def build_index(self):
-        doc_count = float(len(self.corpus))
+        doc_count = float(len(self.documents.keys()))
         idf = {}
+
         for doc in self.documents:
             for tok in self.documents[doc]:
                 if tok in idf:
@@ -87,7 +88,7 @@ class TokenStore(object):
                                                      self.token_list))]
         return return_list
 
-    def dump_database(self, infile, reindex=False, fresh=False):
+    def dump_database(self, infile, reindex=False):
         """ Addendum 03DEC2010: added database dump."""
 
         # really need to parameterize these...
@@ -96,31 +97,9 @@ class TokenStore(object):
         sqlcon = sqlite3.connect(infile)
         cur = sqlcon.cursor()
 
-        # This will actually become an issue on
-        # reindex. Either need to pull the document
-        # ID from the doc itself, or just look up
-        # each time. May just be easiest to say
-        # "if this is a reindex, select the max docid
-        # from `docs`, and set docid = to that + 1"
-        # fixed below
         doc_id = 1
 
         if reindex:
-            # this actually fixes the above:
-            # we first fetch the mac doc_id
-            # from the`docs` table, and then
-            # we use _that_ as the base to
-            # iterate over
-            if not fresh:
-                tmp = cur.execute("SELECT max(doc_id) FROM docs;")
-                result = tmp.fetchall()
-                doc_id = result[0][0]
-
-                if doc_id is not None:
-                    doc_id = doc_id 
-                else:
-                    doc_id = 1
-
             cur.execute("DELETE FROM docs;")
             cur.execute("DELETE FROM tokens;")
 
@@ -157,7 +136,6 @@ class TokenStore(object):
         for row in cur.fetchall():
             tok = row[0]
             cnt = row[1]
-            print "row: {0}, docid: {0}".format(row[2], row[2] - 1)
             docid = row[2] - 1
             dockey = docs[docid]
             self.documents[dockey][tok] = dict(term_frequency=cnt, tf_idf=0.0)

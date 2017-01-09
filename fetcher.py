@@ -91,4 +91,4 @@ for arg in args:
         process(arg, slugify, stopwords, ts, headers)
 
 ts.build_index()
-ts.dump_database("./index_test.db", reindex=True, fresh=fresh)
+ts.dump_database("./index_test.db", reindex=True)
